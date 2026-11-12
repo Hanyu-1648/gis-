@@ -33,7 +33,8 @@
 <div id="map"></div>
 <div class="tip">
   拖一拖、滚轮放大试试<br>
-  点地图上的彩色圆点看信息
+  彩色圆点可以点开看介绍<br>
+  灰蓝色块是 OSM 建筑轮廓，鼠标移上去有楼名
 </div>
 <button id="locBtn">定位我</button>
 <div id="locMsg"></div>
@@ -215,6 +216,46 @@
         '浏览器不允许 file:// 页面读取本地文件。<br>' +
         '双击项目里的「启动服务器.bat」，再访问 http://localhost:8000';
       document.body.appendChild(tip);
+    });
+
+  // ===================================================================
+  // 6. OSM 建筑轮廓（Polygon）
+  //    数据是 Overpass Turbo 导出的 export.geojson，复制成了 data/buildings.geojson
+  //    GeoJSON 里存的是 WGS-84，底图是 GCJ-02，所以还是过一遍坐标转换
+  // ===================================================================
+  map.createPane('buildings');
+  map.getPane('buildings').style.zIndex = 350;   // 压在路线和圆点下面，不挡事
+
+  fetch('./data/buildings.geojson')
+    .then(function (res) {
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return res.json();
+    })
+    .then(function (data) {
+      var buildings = L.geoJSON(data, {
+        pane: 'buildings',
+        coordsToLatLng: function (coords) {
+          var g = wgs84ToGcj02(coords[0], coords[1]);
+          return L.latLng(g[1], g[0]);
+        },
+        style: function () {
+          return {
+            color: '#7d8fa3', weight: 1, opacity: 0.7,
+            fillColor: '#9aaec2', fillOpacity: 0.32
+          };
+        },
+        onEachFeature: function (feature, layer) {
+          var name = feature.properties.name;
+          if (!name) return;
+          layer.bindTooltip(name, { sticky: true });
+          layer.on('mouseover', function () { layer.setStyle({ fillOpacity: 0.62 }); });
+          layer.on('mouseout', function () { layer.setStyle({ fillOpacity: 0.32 }); });
+        }
+      }).addTo(map);
+      console.log('建筑轮廓加载完成：' + buildings.getLayers().length + ' 栋');
+    })
+    .catch(function (err) {
+      console.warn('建筑数据没加载出来：', err);
     });
 </script>
 </body>
