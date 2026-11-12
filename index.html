@@ -32,7 +32,8 @@
 <body>
 <div id="map"></div>
 <div class="tip">
-  拖一拖、滚轮放大试试
+  拖一拖、滚轮放大试试<br>
+  点地图上的彩色圆点看信息
 </div>
 <button id="locBtn">定位我</button>
 <div id="locMsg"></div>
@@ -137,6 +138,84 @@
     // enableHighAccuracy:false —— 室内高精度定位经常超时，用网络定位反而更容易出结果
     map.locate({ setView: false, enableHighAccuracy: false, timeout: 30000, maximumAge: 60000 });
   });
+
+  // ===================================================================
+  // 5. 从外部 GeoJSON 文件加载图层
+  //    数据在 data/cug.geojson，里面有 5 个点（图书馆、操场……）
+  //    和 1 条线（校园主轴）。改数据只改那个文件，这里不用动。
+  // ===================================================================
+  var CATEGORY_COLOR = {
+    '学习': '#1B9AAA',   // 青
+    '生活': '#D99A3E',   // 橙
+    '运动': '#4CAF50',   // 绿
+    '地标': '#8E6CC9',   // 紫
+    '路线': '#1B9AAA'
+  };
+
+  // 按 properties.category 生成不同颜色的圆点图标
+  function makeIcon(props) {
+    var c = CATEGORY_COLOR[props.category] || '#888';
+    return L.divIcon({
+      className: '',
+      html: '<div style="width:16px;height:16px;background:' + c +
+            ';border:3px solid #fff;border-radius:50%;box-shadow:0 0 8px rgba(0,0,0,.45)"></div>',
+      iconSize: [22, 22],
+      iconAnchor: [11, 11]
+    });
+  }
+
+  fetch('./data/cug.geojson')
+    .then(function (res) {
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return res.json();
+    })
+    .then(function (data) {
+      var layer = L.geoJSON(data, {
+        // GeoJSON 标准规定坐标是 WGS-84，我们的底图是高德（GCJ-02）。
+        // coordsToLatLng 会对每一个坐标点调用一次，正好在这里统一转换，
+        // 这样数据文件里就能老老实实存 WGS-84，符合规范。
+        coordsToLatLng: function (coords) {
+          var g = wgs84ToGcj02(coords[0], coords[1]);
+          return L.latLng(g[1], g[0]);
+        },
+
+        // 点用彩色圆点图标
+        pointToLayer: function (feature, latlng) {
+          return L.marker(latlng, { icon: makeIcon(feature.properties) });
+        },
+
+        // 线（LineString）的样式：虚线
+        style: function (feature) {
+          return { color: CATEGORY_COLOR[feature.properties.category] || '#1B9AAA', weight: 3, dashArray: '7 6' };
+        },
+
+        // 每个要素点一下弹窗，内容取自 properties 里的字段
+        onEachFeature: function (feature, layer) {
+          var p = feature.properties;
+          layer.bindPopup(
+            '<b>' + p.name + '</b><br>' +
+            '<span style="color:#888;font-size:12px">' + p.category + '</span><br>' +
+            p.note
+          );
+        }
+      }).addTo(map);
+
+      // 自动缩放到能看见全部要素的范围
+      map.closePopup();
+      map.fitBounds(layer.getBounds(), { padding: [40, 40] });
+    })
+    .catch(function (err) {
+      console.error('GeoJSON 加载失败：', err);
+      // 用 file:// 双击打开时，浏览器出于安全不允许页面读取本地文件，会走到这里
+      var tip = document.createElement('div');
+      tip.className = 'tip';
+      tip.style.top = 'auto';
+      tip.style.bottom = '12px';
+      tip.innerHTML = '<b>GeoJSON 没加载出来</b><br>' +
+        '浏览器不允许 file:// 页面读取本地文件。<br>' +
+        '双击项目里的「启动服务器.bat」，再访问 http://localhost:8000';
+      document.body.appendChild(tip);
+    });
 </script>
 </body>
 </html>
