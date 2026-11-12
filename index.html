@@ -21,6 +21,12 @@
     box-shadow: 0 2px 10px rgba(0,0,0,.2);
   }
   #locBtn:disabled { background: #9CB3B8; cursor: default; }
+  #bldBtn {
+    position: absolute; z-index: 1000; left: 12px; bottom: 12px;
+    background: rgba(255,255,255,.95); color: #55606e; border: 1px solid #cbd5e0;
+    border-radius: 8px; padding: 8px 14px; font-size: 13px; cursor: pointer;
+    font-family: inherit; box-shadow: 0 2px 8px rgba(0,0,0,.15);
+  }
   #locMsg {
     position: absolute; z-index: 1000; right: 12px; top: 56px;
     width: 210px; background: rgba(255,255,255,.96); border-radius: 8px;
@@ -37,6 +43,7 @@
   灰蓝色块是 OSM 建筑轮廓，鼠标移上去有楼名
 </div>
 <button id="locBtn">定位我</button>
+<button id="bldBtn">隐藏建筑</button>
 <div id="locMsg"></div>
 
 <script src="./leaflet.js"></script>
@@ -226,6 +233,9 @@
   map.createPane('buildings');
   map.getPane('buildings').style.zIndex = 350;   // 压在路线和圆点下面，不挡事
 
+  var buildingsLayer = null;
+  var BLD_FILL = 0.18;   // 平时很淡，只当描边用
+
   fetch('./data/buildings.geojson')
     .then(function (res) {
       if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -241,22 +251,39 @@
         style: function () {
           return {
             color: '#7d8fa3', weight: 1, opacity: 0.7,
-            fillColor: '#9aaec2', fillOpacity: 0.32
+            fillColor: '#9aaec2', fillOpacity: BLD_FILL
           };
         },
         onEachFeature: function (feature, layer) {
           var name = feature.properties.name;
           if (!name) return;
           layer.bindTooltip(name, { sticky: true });
-          layer.on('mouseover', function () { layer.setStyle({ fillOpacity: 0.62 }); });
-          layer.on('mouseout', function () { layer.setStyle({ fillOpacity: 0.32 }); });
+          layer.on('mouseover', function () { layer.setStyle({ fillOpacity: 0.45 }); });
+          layer.on('mouseout', function () { layer.setStyle({ fillOpacity: BLD_FILL }); });
         }
       }).addTo(map);
+      buildingsLayer = buildings;
       console.log('建筑轮廓加载完成：' + buildings.getLayers().length + ' 栋');
     })
     .catch(function (err) {
       console.warn('建筑数据没加载出来：', err);
     });
+
+  // 建筑层开关：底图和 OSM 数据对不上时，可以把它关掉单独看图
+  var bldBtn = document.getElementById('bldBtn');
+  bldBtn.addEventListener('click', function () {
+    if (!buildingsLayer) {
+      bldBtn.textContent = '建筑还没加载好';
+      return;
+    }
+    if (map.hasLayer(buildingsLayer)) {
+      map.removeLayer(buildingsLayer);
+      bldBtn.textContent = '显示建筑';
+    } else {
+      map.addLayer(buildingsLayer);
+      bldBtn.textContent = '隐藏建筑';
+    }
+  });
 </script>
 </body>
 </html>
