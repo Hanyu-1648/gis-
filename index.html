@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>武汉 · 第一个 Leaflet 地图</title>
+<link rel="stylesheet" href="./leaflet.css">
+<style>
+  html, body { margin: 0; height: 100%; font-family: "Microsoft YaHei", system-ui, sans-serif; }
+  #map { position: absolute; inset: 0; }
+  .tip {
+    position: absolute; z-index: 1000; left: 12px; top: 12px;
+    background: #fff; padding: 10px 14px; border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,.18); font-size: 13px; line-height: 1.7; color: #333;
+  }
+  .tip b { color: #1B9AAA; }
+  #locBtn {
+    position: absolute; z-index: 1000; right: 12px; top: 12px;
+    background: #1B9AAA; color: #fff; border: 0; border-radius: 8px;
+    padding: 10px 16px; font-size: 14px; cursor: pointer; font-family: inherit;
+    box-shadow: 0 2px 10px rgba(0,0,0,.2);
+  }
+  #locBtn:disabled { background: #9CB3B8; cursor: default; }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div class="tip">
+  拖一拖、滚轮放大试试<br>
+  地图库在 <b>本地</b>，瓦片来自国内的高德 —— 不用翻墙
+</div>
+<button id="locBtn">定位我</button>
+
+<script src="./leaflet.js"></script>
+<script>
+  // —— 高德瓦片用的是 GCJ-02（火星坐标），而 GPS/网上查到的经纬度是 WGS-84 ——
+  // 不转换的话点会偏 300~500 米，所以先把 WGS-84 转成 GCJ-02 再交给 Leaflet
+  var PI = Math.PI, AA = 6378245.0, EE = 0.00669342162296594323;
+  function outOfChina(lng, lat) {
+    return !(lng > 73.66 && lng < 135.05 && lat > 3.86 && lat < 53.55);
+  }
+  function tLat(x, y) {
+    var r = -100 + 2 * x + 3 * y + 0.2 * y * y + 0.1 * x * y + 0.2 * Math.sqrt(Math.abs(x));
+    r += (20 * Math.sin(6 * x * PI) + 20 * Math.sin(2 * x * PI)) * 2 / 3;
+    r += (20 * Math.sin(y * PI) + 40 * Math.sin(y / 3 * PI)) * 2 / 3;
+    r += (160 * Math.sin(y / 12 * PI) + 320 * Math.sin(y * PI / 30)) * 2 / 3;
+    return r;
+  }
+  function tLng(x, y) {
+    var r = 300 + x + 2 * y + 0.1 * x * x + 0.1 * x * y + 0.1 * Math.sqrt(Math.abs(x));
+    r += (20 * Math.sin(6 * x * PI) + 20 * Math.sin(2 * x * PI)) * 2 / 3;
+    r += (20 * Math.sin(x * PI) + 40 * Math.sin(x / 3 * PI)) * 2 / 3;
+    r += (150 * Math.sin(x / 12 * PI) + 300 * Math.sin(x / 30 * PI)) * 2 / 3;
+    return r;
+  }
+  function wgs84ToGcj02(lng, lat) {
+    if (outOfChina(lng, lat)) return [lng, lat];
+    var dLat = tLat(lng - 105, lat - 35);
+    var dLng = tLng(lng - 105, lat - 35);
+    var radLat = lat / 180 * PI;
+    var magic = Math.sin(radLat);
+    magic = 1 - EE * magic * magic;
+    var sqrtMagic = Math.sqrt(magic);
+    dLat = (dLat * 180) / ((AA * (1 - EE)) / (magic * sqrtMagic) * PI);
+    dLng = (dLng * 180) / (AA / sqrtMagic * Math.cos(radLat) * PI);
+    return [lng + dLng, lat + dLat];
+  }
+
+  // 地大西区（WGS-84 坐标）。要精确到 51 栋，把下面这两个数改成你在高德上点到的位置即可
+  var CUG = wgs84ToGcj02(114.3940, 30.5230);
+
+  // 1. 建地图，中心点定在这栋楼、缩放级别 17
+  var map = L.map('map').setView([CUG[1], CUG[0]], 17);
+
+  // 2. 铺底图：高德的瓦片服务
+  L.tileLayer(
+    'https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}',
+    { subdomains: '1234', maxZoom: 18, attribution: '底图 © 高德地图' }
+  ).addTo(map);
+
+  // 3. 在西区 51 栋放一个圆点
+  var dot = L.divIcon({
+    className: '',
+    html: '<div style="width:14px;height:14px;background:#1B9AAA;border:3px solid #fff;border-radius:50%;box-shadow:0 0 8px rgba(0,0,0,.45)"></div>',
+    iconSize: [20, 20],
+    iconAnchor: [10, 10]
+  });
+  L.marker([CUG[1], CUG[0]], { icon: dot })
+    .addTo(map)
+    .bindPopup('中国地质大学 · 西区')
+    .openPopup();
+
+  // 4. 实时定位：点按钮 → 浏览器给出当前位置（WGS-84）→ 转火星坐标 → 标一个橙点
+  var meDot = L.divIcon({
+    className: '',
+    html: '<div style="width:16px;height:16px;background:#D99A3E;border:3px solid #fff;border-radius:50%;box-shadow:0 0 10px rgba(0,0,0,.5)"></div>',
+    iconSize: [22, 22],
+    iconAnchor: [11, 11]
+  });
+  var meMarker = null;
+  var locBtn = document.getElementById('locBtn');
+
+  map.on('locationfound', function (e) {
+    var g = wgs84ToGcj02(e.latlng.lng, e.latlng.lat);   // GPS 给的是 WGS-84，底图要 GCJ-02
+    var ll = L.latLng(g[1], g[0]);
+    if (meMarker) map.removeLayer(meMarker);
+    meMarker = L.marker(ll, { icon: meDot })
+      .addTo(map)
+      .bindPopup('你在这里 · 误差约 ' + Math.round(e.accuracy) + ' 米')
+      .openPopup();
+    map.setView(ll, 17);
+    locBtn.disabled = false;
+    locBtn.textContent = '重新定位';
+  });
+
+  map.on('locationerror', function (e) {
+    locBtn.disabled = false;
+    locBtn.textContent = '定位我';
+    alert('拿不到定位：' + e.message +
+      '\n\n用 file:// 双击打开时浏览器会拒绝；要用 http://localhost 或 https 地址打开。');
+  });
+
+  locBtn.addEventListener('click', function () {
+    locBtn.disabled = true;
+    locBtn.textContent = '定位中…';
+    // setView:false —— 自己拿到坐标、转换完再移动地图，避免先跳到 WGS-84 的原点
+    map.locate({ setView: false, enableHighAccuracy: true, timeout: 15000 });
+  });
+</script>
+</body>
+</html>
