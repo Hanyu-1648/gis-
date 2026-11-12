@@ -21,15 +21,21 @@
     box-shadow: 0 2px 10px rgba(0,0,0,.2);
   }
   #locBtn:disabled { background: #9CB3B8; cursor: default; }
+  #locMsg {
+    position: absolute; z-index: 1000; right: 12px; top: 56px;
+    width: 210px; background: rgba(255,255,255,.96); border-radius: 8px;
+    padding: 8px 10px; font-size: 12px; line-height: 1.6; color: #555;
+    box-shadow: 0 2px 10px rgba(0,0,0,.15); display: none;
+  }
 </style>
 </head>
 <body>
 <div id="map"></div>
 <div class="tip">
-  拖一拖、滚轮放大试试<br>
-  地图库在 <b>本地</b>，瓦片来自国内的高德 —— 不用翻墙
+  拖一拖、滚轮放大试试
 </div>
 <button id="locBtn">定位我</button>
+<div id="locMsg"></div>
 
 <script src="./leaflet.js"></script>
 <script>
@@ -99,6 +105,8 @@
   });
   var meMarker = null;
   var locBtn = document.getElementById('locBtn');
+  var locMsg = document.getElementById('locMsg');
+  function showMsg(t) { locMsg.textContent = t; locMsg.style.display = 'block'; }
 
   map.on('locationfound', function (e) {
     var g = wgs84ToGcj02(e.latlng.lng, e.latlng.lat);   // GPS 给的是 WGS-84，底图要 GCJ-02
@@ -111,20 +119,23 @@
     map.setView(ll, 17);
     locBtn.disabled = false;
     locBtn.textContent = '重新定位';
+    showMsg('定位成功，误差约 ' + Math.round(e.accuracy) + ' 米');
   });
 
   map.on('locationerror', function (e) {
     locBtn.disabled = false;
     locBtn.textContent = '定位我';
-    alert('拿不到定位：' + e.message +
-      '\n\n用 file:// 双击打开时浏览器会拒绝；要用 http://localhost 或 https 地址打开。');
+    var reason = { 1: '你拒绝了位置权限', 2: '设备拿不到定位信号', 3: '定位超时' }[e.code] || e.message;
+    showMsg('定位失败：' + reason + '。可以换个浏览器（手机自带浏览器、Safari）再试，或到户外/窗边。');
   });
 
   locBtn.addEventListener('click', function () {
     locBtn.disabled = true;
     locBtn.textContent = '定位中…';
+    locMsg.style.display = 'none';
     // setView:false —— 自己拿到坐标、转换完再移动地图，避免先跳到 WGS-84 的原点
-    map.locate({ setView: false, enableHighAccuracy: true, timeout: 15000 });
+    // enableHighAccuracy:false —— 室内高精度定位经常超时，用网络定位反而更容易出结果
+    map.locate({ setView: false, enableHighAccuracy: false, timeout: 30000, maximumAge: 60000 });
   });
 </script>
 </body>
