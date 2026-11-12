@@ -68,7 +68,13 @@
     r += (150 * Math.sin(x / 12 * PI) + 300 * Math.sin(x / 30 * PI)) * 2 / 3;
     return r;
   }
+  // 2026-11-12：底图从高德瓦片（GCJ-02）换成了 OSM 瓦片（WGS-84）。
+  // OSM 瓦片本身就是标准 WGS-84，不需要火星坐标转换，所以这个开关关掉。
+  // 以后想切回高德，把下面这行改成 true 即可。
+  var USE_GCJ = false;
+
   function wgs84ToGcj02(lng, lat) {
+    if (!USE_GCJ) return [lng, lat];   // OSM 模式下坐标原样返回
     if (outOfChina(lng, lat)) return [lng, lat];
     var dLat = tLat(lng - 105, lat - 35);
     var dLng = tLng(lng - 105, lat - 35);
@@ -87,11 +93,12 @@
   // 1. 建地图，中心点定在这栋楼、缩放级别 17
   var map = L.map('map').setView([CUG[1], CUG[0]], 17);
 
-  // 2. 铺底图：高德的瓦片服务
-  L.tileLayer(
-    'https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}',
-    { subdomains: '1234', maxZoom: 18, attribution: '底图 © 高德地图' }
-  ).addTo(map);
+  // 2. 铺底图：OpenStreetMap 官方瓦片（WGS-84，和我们的数据同一套坐标）
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    subdomains: 'abc',
+    maxZoom: 19,
+    attribution: '底图 © <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> 贡献者'
+  }).addTo(map);
 
   // 3. 在西区 51 栋放一个圆点
   var dot = L.divIcon({
@@ -118,7 +125,7 @@
   function showMsg(t) { locMsg.textContent = t; locMsg.style.display = 'block'; }
 
   map.on('locationfound', function (e) {
-    var g = wgs84ToGcj02(e.latlng.lng, e.latlng.lat);   // GPS 给的是 WGS-84，底图要 GCJ-02
+    var g = wgs84ToGcj02(e.latlng.lng, e.latlng.lat);   // GPS 本来就是 WGS-84，OSM 底图直接用；切回高德时才转
     var ll = L.latLng(g[1], g[0]);
     if (meMarker) map.removeLayer(meMarker);
     meMarker = L.marker(ll, { icon: meDot })
