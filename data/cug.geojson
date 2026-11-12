@@ -12,7 +12,7 @@
         "type": "Point",
         "coordinates": [114.39380, 30.52093]
       }
-    },
+    },  
     {
       "type": "Feature",
       "properties": {
@@ -71,22 +71,6 @@
       "geometry": {
         "type": "Point",
         "coordinates": [114.40035, 30.52318]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "name": "去东区吃饭",
-        "category": "路线",
-        "note": "从西区一路走到东苑的路线，用 LineString 表示。"
-      },
-      "geometry": {
-        "type": "LineString",
-        "coordinates": [
-          [114.39152, 30.52231],
-          [114.39380, 30.52093],
-          [114.40035, 30.52318]
-        ]
       }
     }
   ]
