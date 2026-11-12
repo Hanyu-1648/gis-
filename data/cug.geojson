@@ -1,0 +1,93 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "图书馆",
+        "category": "学习",
+        "note": "西一路旁边。考试周的第二个家，抢座要趁早。"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [114.39380, 30.52093]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "西区田径场",
+        "category": "运动",
+        "note": "跑圈、体测、军训都在这儿，晚上人很多。"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [114.39278, 30.52301]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "体育馆",
+        "category": "运动",
+        "note": "田径场北边，下雨天体育课往这儿跑。"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [114.39276, 30.52443]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "西区 52 栋",
+        "category": "生活",
+        "note": "学生公寓。楼下小卖部的东西比食堂贵两块。"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [114.39152, 30.52231]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "西苑食堂",
+        "category": "生活",
+        "note": "西区吃饭的主力，高峰期排队能排到门口。"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [114.39074, 30.52358]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "东苑食堂",
+        "category": "生活",
+        "note": "在东区。据说比西苑好吃，但过来要穿过整个校区。"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [114.40035, 30.52318]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "去东区吃饭",
+        "category": "路线",
+        "note": "从西区一路走到东苑的路线，用 LineString 表示。"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [114.39152, 30.52231],
+          [114.39380, 30.52093],
+          [114.40035, 30.52318]
+        ]
+      }
+    }
+  ]
+}
