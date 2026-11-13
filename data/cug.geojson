@@ -78,11 +78,11 @@
       "properties": {
         "name": "西区 54 栋",
         "category": "生活",
-        "note": "学生公寓，在网球场南边。"
+        "note": "学生公寓，这栋楼北边那一半。"
       },
       "geometry": {
         "type": "Point",
-        "coordinates": [114.39146, 30.52405]
+        "coordinates": [114.39168, 30.52420]
       }
     },
     {
@@ -90,11 +90,11 @@
       "properties": {
         "name": "西区 57 栋",
         "category": "生活",
-        "note": "学生公寓，靠近西苑食堂那边。"
+        "note": "学生公寓，这栋楼南边那一半。"
       },
       "geometry": {
         "type": "Point",
-        "coordinates": [114.39095, 30.52372]
+        "coordinates": [114.39169, 30.52392]
       }
     }
   ]
